@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulasi Kantor - skt X gmn Ultimate Skill Edition</title>
+    <title>test aim - skt X gmn Ultimate Skill Edition</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -38,29 +38,25 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.4); overflow: hidden;
         }
 
-        /* Detail Background Jendela */
+        /* Detail Background Jendela dengan Pohon Besar & Latar Hijau */
         .game-area::before {
-    content: "🌳";
-    font-size: 35px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-bottom: 5px;
-    position: absolute;
-    top: 30px;
-    left: 40px;
-    width: 80px;
-    height: 100px;
-    background: rgba(255, 255, 255, 0.25);
-    border: 3px solid #fff;
-    border-radius: 4px;
-    opacity: 0.6;
-    pointer-events: none;
-}
-            
-            
-            
-        
+            content: "🌳";
+            font-size: 55px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 2px;
+            position: absolute;
+            top: 30px;
+            left: 40px;
+            width: 80px;
+            height: 100px;
+            background: #27ae60;
+            border: 3px solid #fff;
+            border-radius: 4px;
+            opacity: 0.8;
+            pointer-events: none;
+        }
 
         /* Detail Background Pajangan Dinding */
         .game-area::after {
@@ -114,7 +110,7 @@
 <body>
 
     <h1 class="judul-utama">Tes Aim Buang Sampah Lu [ <span>skt X gmn</span> ] 🎯</h1>
-    <p class="instruksi">Incar sudut tengah untuk PERFECT HIT (100% Masuk) !</p>
+    <p class="instruksi">Incar sudut tengah untuk PERFECT HIT (100% Masuk) </p>
 
     <div class="papan-skor">
         <div>Skor Saat Ini: <span id="skorSekarang" class="skor-angka">0</span></div>
@@ -144,6 +140,7 @@
 
         let sudutSekarang = -10; let arahGerak = -2.5; let animasiBidikan; let sedangBermain = true;
         let skor = 0;
+        let gagalBeruntun = 0; 
         let highScore = localStorage.getItem('skt_gmn_highscore') ? parseInt(localStorage.getItem('skt_gmn_highscore')) : 0;
         
         uiHighScore.innerText = highScore;
@@ -178,7 +175,6 @@
                     o.start(audioCtx.currentTime + index * 0.1); o.stop(audioCtx.currentTime + index * 0.1 + 0.3);
                 });
             } else if (type === 'perfect') {
-                // Suara melodi spesial super tinggi kalau skill-nya pas
                 const perfectNotes = [587.33, 739.99, 880.00, 1174.66];
                 perfectNotes.forEach((freq, index) => {
                     const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
@@ -315,9 +311,10 @@
             sampah.style.transform = "translate(180px, -160px) rotate(180deg)";
 
             setTimeout(() => {
-                // --- KONDISI 1: MEKANIK MURNI SKILL (Hitbox Sangat Kecil: Antara Sudut -35° sampai -37°) ---
+                // --- KONDISI 1: MEKANIK MURNI SKILL ---
                 if (sudutSekarang <= -35 && sudutSekarang >= -37) {
-                    prosesKemenangan(true); // 100% Masuk jalur Skill murni!
+                    gagalBeruntun = 0;
+                    prosesKemenangan(true);
                     return;
                 }
 
@@ -325,13 +322,31 @@
                 const angkaKeberuntungan = Math.floor(Math.random() * 100) + 1;
 
                 if (angkaKeberuntungan <= 7) {
-                    prosesKemenangan(false); // Masuk lewat hoki gacha
+                    gagalBeruntun = 0;
+                    prosesKemenangan(false);
                 } else {
-                    // JALUR GAGAL
+                    // --- JALUR GAGAL ---
                     playSound('fail');
                     skor = 0;
                     uiSkor.innerText = skor;
+                    
+                    gagalBeruntun += 1;
 
+                    // CEK EASTER EGG (Gagal 7 Kali Beruntun)
+                    if (gagalBeruntun === 7) {
+                        gagalBeruntun = 0;
+                        sampah.style.transition = "all 0.4s ease-out";
+                        sampah.style.transform = "scale(0)";
+                        
+                        setTimeout(() => {
+                            notif.innerText = "Udah 7 kali gagal cupu banget sih! 🤪🤫";
+                            notif.className = "notifikasi muncul gagal";
+                            setTimeout(resetGame, 4500);
+                        }, 350);
+                        return;
+                    }
+
+                    // GAGAL BIASA
                     const indexGagal = Math.floor(Math.random() * kejadianGagal.length);
                     const kejadian = kejadianGagal[indexGagal];
                     
