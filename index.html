@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Buang Sampah </title>
+    <title>Game Buang Sampah Ngeselin - Office Edition</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -13,42 +13,56 @@
             min-height: 100vh; overflow: hidden; text-align: center;
             user-select: none;
         }
-        h1 { font-size: 26px; margin-bottom: 5px; color: #f1c40f; }
+        h1 { font-size: 26px; margin-bottom: 5px; color: #f1c40f; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
         .instruksi { font-size: 14px; color: #bdc3c7; margin-bottom: 20px; }
         
-        /* Area Lapangan Game */
+        /* Area Lapangan Game dengan Tema Dinding Kantor */
         .game-area {
             position: relative; width: 100%; max-width: 600px; height: 350px;
-            background: #34495e; border: 4px solid #7f8c8d; border-radius: 10px; margin-bottom: 20px;
+            /* Desain Dinding & Lantai Kantor Menggunakan Gradasi CSS */
+            background: linear-gradient(to bottom, 
+                #d2b48c 0%, #e6d7c3 70%, /* Warna cat dinding kantor */
+                #8b5a2b 70%, #a0522d 72%, /* Pembatas kayu dinding (skirting) */
+                #cd853f 72%, #deb887 100% /* Karpet / lantai kayu kantor */
+            );
+            border: 6px solid #5c3a21; border-radius: 12px; margin-bottom: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            overflow: hidden;
         }
         
-        /* Elemen Sampah */
+        /* Elemen Sampah (Apel) */
         .sampah { 
-            position: absolute; bottom: 20px; left: 60px; font-size: 45px; 
+            position: absolute; bottom: 35px; left: 60px; font-size: 45px; 
             z-index: 10; transform-origin: center;
         }
         
         /* Elemen Tong Sampah */
-        .tong-sampah { position: absolute; bottom: 20px; right: 70px; font-size: 55px; z-index: 5; }
+        .tong-sampah { position: absolute; bottom: 35px; right: 70px; font-size: 55px; z-index: 5; }
         
         /* Garis Bidikan (Aim Indicator) */
         .aim-line {
-            position: absolute; bottom: 45px; left: 85px;
+            position: absolute; bottom: 60px; left: 85px;
             width: 120px; height: 3px;
-            border-top: 3px dashed #f1c40f;
+            border-top: 3px dashed #e74c3c;
             transform-origin: left center;
             transform: rotate(-45deg);
-            z-index: 2;
-            pointer-events: none;
+            z-index: 2; pointer-events: none;
         }
 
-        /* Tombol Tahan & Lepas */
+        /* Elemen Efek Visual Kejadian Gagal (Dibuat Tersembunyi di Awal) */
+        .efek-gangguan {
+            position: absolute; font-size: 80px; opacity: 0; z-index: 15;
+            transition: all 0.5s ease-out; pointer-events: none;
+        }
+
+        /* Tombol Lempar */
         .btn-lempar {
             background: #2ecc71; color: white; border: none; padding: 15px 50px;
             font-size: 18px; font-weight: bold; border-radius: 25px; cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background 0.2s, transform 0.1s;
         }
-        .btn-lempar.active { background: #e74c3c; }
+        .btn-lempar:hover { background: #27ae60; }
+        .btn-lempar:active { transform: scale(0.95); }
 
         /* Pop-up Efek Kejadian */
         .notifikasi {
@@ -64,16 +78,17 @@
 </head>
 <body>
 
-    <h1>Simulasi Buang Sampah (Pake Aim) 🎯🗑️</h1>
-    <p class="instruksi">Klik / Tekan tombol di bawah saat garis bidikan mengarah ke tong sampah!</p>
+    <h1>Simulasi Iseng di Kantor 🎯💼</h1>
+    <p class="instruksi">Paskan garis bidik ke tong sampah lalu klik tombol di bawah!</p>
 
     <div class="game-area">
         <div id="aimLine" class="aim-line"></div>
         <div id="itemSampah" class="sampah">🍎</div>
         <div id="itemTong" class="tong-sampah">🗑️</div>
+        <div id="efekVisual" class="efek-gangguan"></div>
     </div>
 
-    <button id="tombolLempar" class="btn-lempar" onclick="tembakSampah()">TAP / KLIK UNTUK LEMPAR!</button>
+    <button id="tombolLempar" class="btn-lempar" onclick="tembakSampah()">LEMPAR SEKARANG!</button>
     <div id="kotakNotif" class="notifikasi"></div>
 
     <script>
@@ -82,77 +97,143 @@
         const aimLine = document.getElementById('aimLine');
         const tombol = document.getElementById('tombolLempar');
         const notif = document.getElementById('kotakNotif');
+        const efekVisual = document.getElementById('efekVisual');
 
         let sudutSekarang = -10;
-        let arahGerak = -1.5; // Kecepatan naik turun bidikan
+        let arahGerak = -2; 
         let animasiBidikan;
         let sedangBermain = true;
 
-        // Loop untuk menggerakkan garis bidik secara otomatis naik-turun
+        // Gerakan naik turun garis bidik otomatis
         function gerakkanAim() {
             if (!sedangBermain) return;
-            
             sudutSekarang += arahGerak;
-            // Batasi sudut bidikan (antara -80 derajat sampai -10 derajat)
-            if (sudutSekarang <= -80 || sudutSekarang >= -10) {
-                arahGerak = -arahGerak; // Balik arah gerak
-            }
+            if (sudutSekarang <= -80 || sudutSekarang >= -10) { arahGerak = -arahGerak; }
             aimLine.style.transform = `rotate(${sudutSekarang}deg)`;
             animasiBidikan = requestAnimationFrame(gerakkanAim);
         }
-
-        // Mulai animasi bidikan di awal game
         gerakkanAim();
 
-        // 12 Kejadian Gagal Ngeselin
+        // Logika 12 Kejadian Gagal dengan Animasi Simpel
         const kejadianGagal = [
-            { teks: "Gagal! Tiba-tiba ada badai pasir dari antah berantah! 🌪️", aksi: () => sampah.style.transform = "translate(100px, -220px) rotate(720deg)" },
-            { teks: "Gagal! Tong sampahnya tiba-tiba punya sayap dan terbang! 🕊️", aksi: () => tong.style.transform = "translateY(-160px)" },
-            { teks: "Gagal! Gravitasi bumi mendadak hilang, sampah melayang ke atas! 🚀", aksi: () => sampah.style.transform = "translateY(-270px)" },
-            { teks: "Gagal! Ada kucing oren lewat dan menggeser tong sampahnya! 🐈", aksi: () => tong.style.transform = "translateX(90px)" },
-            { teks: "Gagal! Lemparan terlalu kuat, sampahnya menembus atmosfer! 🌠", aksi: () => sampah.style.transform = "translate(450px, -320px)" },
-            { teks: "Gagal! Mendadak muncul portal gaib yang memindahkan sampah! 🌀", aksi: () => sampah.style.opacity = "0" },
-            { teks: "Gagal! Angin sepoi-sepoi tapi kok niupnya kencang banget? 💨", aksi: () => sampah.style.transform = "translate(-30px, -80px)" },
-            { teks: "Gagal! Tong sampahnya mendadak disambar petir dan hancur! ⚡", aksi: () => tong.innerHTML = "💥" },
-            { teks: "Gagal! Tangan kamu tiba-tiba kram saat melempar! 🖐️", aksi: () => sampah.style.transform = "translateY(15px)" },
-            { teks: "Gagal! Sampahnya malah berubah jadi burung lalu terbang kabur! 🐦", aksi: () => { sampah.innerHTML = "🐦"; sampah.style.transform = "translate(-100px, -200px)"; } },
-            { teks: "Gagal! Bumi berputar terlalu cepat, tongnya geser sendiri! 🌍", aksi: () => tong.style.transform = "translateX(-170px)" },
-            { teks: "Gagal! Tikus got mendadak muncul dan menangkap sampahmu! 🐀", aksi: () => sampah.style.transform = "translate(180px, 20px)" }
+            { 
+                teks: "Gagal! Tiba-tiba ada badai pasir dari antah berantah! 🌪️", 
+                animasi: () => {
+                    efekVisual.innerHTML = "🌪️"; efekVisual.style.left = "0px"; efekVisual.style.top = "100px"; efekVisual.style.opacity = "1";
+                    setTimeout(() => { 
+                        efekVisual.style.left = "300px"; 
+                        sampah.style.transform = "translate(100px, -220px) rotate(720deg)";
+                    }, 50);
+                }
+            },
+            { 
+                teks: "Gagal! Tong sampahnya tiba-tiba punya sayap dan terbang! 🕊️", 
+                animasi: () => { tong.style.transform = "translateY(-160px) rotate(-20deg)"; }
+            },
+            { 
+                teks: "Gagal! Gravitasi bumi mendadak hilang, sampah melayang ke atas! 🚀", 
+                animasi: () => { 
+                    sampah.style.transform = "translateY(-270px)";
+                    efekVisual.innerHTML = "✨"; efekVisual.style.left = "100px"; efekVisual.style.top = "200px"; efekVisual.style.opacity = "1";
+                }
+            },
+            { 
+                teks: "Gagal! Ada kucing oren lewat dan menggeser tong sampahnya! 🐈", 
+                animasi: () => {
+                    efekVisual.innerHTML = "🐈"; efekVisual.style.right = "-50px"; efekVisual.style.bottom = "35px"; efekVisual.style.opacity = "1";
+                    setTimeout(() => { 
+                        efekVisual.style.right = "150px"; 
+                        tong.style.transform = "translateX(90px)";
+                    }, 50);
+                }
+            },
+            { 
+                teks: "Gagal! Lemparan terlalu kuat, sampahnya menembus atmosfer! 🌠", 
+                animasi: () => { 
+                    sampah.style.transform = "translate(450px, -320px) scale(0.2)";
+                    efekVisual.innerHTML = "✨"; efekVisual.style.left = "400px"; efekVisual.style.top = "50px"; efekVisual.style.opacity = "1";
+                }
+            },
+            { 
+                teks: "Gagal! Mendadak muncul portal gaib yang memindahkan sampah! 🌀", 
+                animasi: () => {
+                    efekVisual.innerHTML = "🌀"; efekVisual.style.left = "200px"; efekVisual.style.top = "100px"; efekVisual.style.opacity = "1";
+                    setTimeout(() => { sampah.style.opacity = "0"; }, 200);
+                }
+            },
+            { 
+                teks: "Gagal! Angin sepoi-sepoi tapi kok niupnya kencang banget? 💨", 
+                animasi: () => {
+                    efekVisual.innerHTML = "💨"; efekVisual.style.left = "250px"; efekVisual.style.top = "80px"; efekVisual.style.opacity = "1";
+                    sampah.style.transform = "translate(-30px, -80px)";
+                }
+            },
+            { 
+                teks: "Gagal! Tong sampahnya mendadak disambar petir dan hancur! ⚡", 
+                animasi: () => {
+                    efekVisual.innerHTML = "⚡"; efekVisual.style.right = "80px"; efekVisual.style.top = "50px"; efekVisual.style.opacity = "1";
+                    setTimeout(() => { tong.innerHTML = "💥"; efekVisual.style.opacity = "0"; }, 300);
+                }
+            },
+            { 
+                teks: "Gagal! Tangan kamu tiba-tiba kram saat melempar! 🖐️", 
+                animasi: () => { 
+                    sampah.style.transform = "translateY(15px)";
+                    efekVisual.innerHTML = "💥"; efekVisual.style.left = "50px"; efekVisual.style.bottom = "30px"; efekVisual.style.opacity = "1";
+                }
+            },
+            { 
+                teks: "Gagal! Sampahnya malah berubah jadi burung lalu terbang kabur! 🐦", 
+                animasi: () => { 
+                    setTimeout(() => {
+                        sampah.innerHTML = "🐦"; 
+                        sampah.style.transform = "translate(-100px, -200px)";
+                    }, 200);
+                }
+            },
+            { 
+                teks: "Gagal! Bumi berputar terlalu cepat, tongnya geser sendiri! 🌍", 
+                animasi: () => {
+                    efekVisual.innerHTML = "🌍"; efekVisual.style.left = "220px"; efekVisual.style.top = "20px"; efekVisual.style.opacity = "0.3";
+                    tong.style.transform = "translateX(-170px)";
+                }
+            },
+            { 
+                teks: "Gagal! Tikus got mendadak muncul dan menangkap sampahmu! 🐀", 
+                animasi: () => {
+                    efekVisual.innerHTML = "🐀"; efekVisual.style.left = "300px"; efekVisual.style.bottom = "-50px"; efekVisual.style.opacity = "1";
+                    setTimeout(() => { 
+                        efekVisual.style.bottom = "35px";
+                        sampah.style.transform = "translate(180px, 20px) scale(0)";
+                    }, 100);
+                }
+            }
         ];
 
         function resetGame() {
-            sampah.style.transition = "none";
-            sampah.style.transform = "none"; 
-            sampah.style.opacity = "1"; 
-            sampah.innerHTML = "🍎";
-            tong.style.transform = "none"; 
-            tong.innerHTML = "🗑️";
+            sampah.style.transition = "none"; sampah.style.transform = "none"; sampah.style.opacity = "1"; sampah.innerHTML = "🍎";
+            tong.style.transform = "none"; tong.innerHTML = "🗑️";
+            efekVisual.style.transition = "none"; efekVisual.style.opacity = "0"; efekVisual.style.transform = "none";
             notif.className = "notifikasi"; 
-            
-            sedangBermain = true;
-            aimLine.style.opacity = "1";
-            tombol.disabled = false;
-            gerakkanAim(); // Jalankan bidikan lagi
+            sedangBermain = true; aimLine.style.opacity = "1"; tombol.disabled = false;
+            gerakkanAim();
         }
 
         function tembakSampah() {
-            sedangBermain = false; // Hentikan pergerakan garis bidik
+            sedangBermain = false;
             cancelAnimationFrame(animasiBidikan);
             tombol.disabled = true;
-            aimLine.style.opacity = "0"; // Sembunyikan garis aim saat terbang
+            aimLine.style.opacity = "0";
             
-            // Berikan efek transisi lemparan terbang
-            sampah.style.transition = "all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
-            
-            // Efek terbang awal mengikuti arah sudut bidikan terakhir pemain
-            sampah.style.transform = "translate(150px, -150px) rotate(180deg)";
+            sampah.style.transition = "all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+            // Efek melambung awal menuju tong
+            sampah.style.transform = "translate(180px, -160px) rotate(180deg)";
 
             setTimeout(() => {
-                // Logika keberuntungan 7%
                 const angkaKeberuntungan = Math.floor(Math.random() * 100) + 1;
 
                 if (angkaKeberuntungan <= 7) {
-                    // JIKA BERHASIL (7% Peluang) -> Sampah masuk mulus ke tong
+                    // BERHASIL (7%)
                     sampah.style.transform = "translate(390px, 0px) rotate(360deg)";
                     setTimeout(() => {
                         sampah.style.opacity = "0";
@@ -161,16 +242,22 @@
                         setTimeout(resetGame, 3000);
                     }, 400);
                 } else {
-                    // JIKA GAGAL (93% Peluang) -> Aktifkan kejadian acak ngeselin
+                    // GAGAL (93%)
                     const indexGagal = Math.floor(Math.random() * kejadianGagal.length);
                     const kejadian = kejadianGagal[indexGagal];
                     
-                    sampah.style.transition = "all 0.5s ease-out";
-                    kejadian.aksi();
+                    sampah.style.transition = "all 0.4s ease-out";
+                    efekVisual.style.transition = "all 0.4s ease-out";
                     
-                    notif.innerText = kejadian.teks;
-                    notif.className = "notifikasi muncul gagal";
-                    setTimeout(resetGame, 3500);
+                    // Jalankan animasi gangguan visualnya terlebih dahulu
+                    kejadian.animasi();
+                    
+                    // Tampilkan kotak kata-kata setelah efek visualnya muncul
+                    setTimeout(() => {
+                        notif.innerText = kejadian.teks;
+                        notif.className = "notifikasi muncul gagal";
+                        setTimeout(resetGame, 3500);
+                    }, 300);
                 }
             }, 450);
         }
