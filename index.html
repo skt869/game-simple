@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>tes aim lo - skt X gmn Edition</title>
+    <title>Test aim - skt X gmn Ultimate</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -14,12 +14,19 @@
             user-select: none;
         }
         
-        /* Judul Kolaborasi yang Jelas dan Terpampang Nyata */
-        .judul-utama { font-size: 28px; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .judul-utama { font-size: 28px; margin-bottom: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
         .judul-utama span { color: #f1c40f; font-weight: 900; letter-spacing: 1px; }
-        .instruksi { font-size: 14px; color: #bdc3c7; margin-bottom: 25px; }
+        .instruksi { font-size: 14px; color: #bdc3c7; margin-bottom: 15px; }
         
-        /* Area Game Kantor dengan Detail Background */
+        /* Papan Skor */
+        .papan-skor {
+            display: flex; gap: 20px; margin-bottom: 15px; font-size: 16px; font-weight: bold;
+            background: rgba(0,0,0,0.2); padding: 8px 20px; border-radius: 20px;
+        }
+        .skor-angka { color: #2ecc71; }
+        .highscore-angka { color: #f1c40f; }
+
+        /* Area Game Kantor */
         .game-area {
             position: relative; width: 100%; max-width: 600px; height: 350px;
             background: linear-gradient(to bottom, 
@@ -44,7 +51,7 @@
             font-size: 30px; opacity: 0.35; pointer-events: none;
         }
         
-        /* Elemen Utama Game */
+        /* Elemen Utama */
         .sampah { 
             position: absolute; bottom: 35px; left: 60px; font-size: 45px; 
             z-index: 10; transform-origin: center;
@@ -88,8 +95,13 @@
 </head>
 <body>
 
-    <h1 class="judul-utama">Tes Aim Buang Sampah Lu   [ <span>skt X gmn</span> ] 🎯</h1>
+    <h1 class="judul-utama">Tes Aim Buang Sampah Lu [ <span>skt X gmn</span> ] 🎯</h1>
     <p class="instruksi">Paskan bidikan lalu klik tombol di bawah untuk melempar!</p>
+
+    <div class="papan-skor">
+        <div>Skor Saat Ini: <span id="skorSekarang" class="skor-angka">0</span></div>
+        <div>Skor Tertinggi: <span id="skorTertinggi" class="highscore-angka">0</span></div>
+    </div>
 
     <div class="game-area">
         <div id="aimLine" class="aim-line"></div>
@@ -108,14 +120,69 @@
         const tombol = document.getElementById('tombolLempar');
         const notif = document.getElementById('kotakNotif');
         const efekVisual = document.getElementById('efekVisual');
+        
+        const uiSkor = document.getElementById('skorSekarang');
+        const uiHighScore = document.getElementById('skorTertinggi');
 
         let sudutSekarang = -10; let arahGerak = -2.5; let animasiBidikan; let sedangBermain = true;
+        let skor = 0;
+        let highScore = localStorage.getItem('skt_gmn_highscore') ? parseInt(localStorage.getItem('skt_gmn_highscore')) : 0;
+        
+        // Tampilkan High Score bawaan di awal game jika ada
+        uiHighScore.innerText = highScore;
 
+        // --- SISTEM GENERATOR AUDIO SYNTHESIS (Web Audio API) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'tick') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            } else if (type === 'woosh') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'win') {
+                osc.type = 'sine';
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // Nada selebrasi c-e-g-c
+                notes.forEach((freq, index) => {
+                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                    o.type = 'sine'; o.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.1);
+                    g.gain.setValueAtTime(0.1, audioCtx.currentTime + index * 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.1 + 0.3);
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.start(audioCtx.currentTime + index * 0.1); o.stop(audioCtx.currentTime + index * 0.1 + 0.3);
+                });
+            } else if (type === 'fail') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.45);
+            }
+        }
+
+        // Jalankan Aim Otomatis + Suara Tick Tipis
+        let frameCounter = 0;
         function gerakkanAim() {
             if (!sedangBermain) return;
             sudutSekarang += arahGerak;
             if (sudutSekarang <= -80 || sudutSekarang >= -10) { arahGerak = -arahGerak; }
             aimLine.style.transform = `rotate(${sudutSekarang}deg)`;
+            
+            // Bunyi tick setiap beberapa frame biar tidak terlalu bising
+            frameCounter++;
+            if (frameCounter % 15 === 0) { playSound('tick'); }
+
             animasiBidikan = requestAnimationFrame(gerakkanAim);
         }
         gerakkanAim();
@@ -125,32 +192,19 @@
                 teks: "Gagal! Tiba-tiba ada badai pasir menyapu apelmu! 🌪️", 
                 animasi: () => {
                     efekVisual.innerHTML = "🌪️"; efekVisual.style.left = "150px"; efekVisual.style.top = "80px"; efekVisual.style.opacity = "1";
-                    setTimeout(() => { 
-                        sampah.style.transform = "translate(120px, -240px) rotate(540deg) scale(0.5)";
-                    }, 100);
+                    setTimeout(() => { sampah.style.transform = "translate(120px, -240px) rotate(540deg) scale(0.5)"; }, 100);
                 }
             },
-            { 
-                teks: "Gagal! Tong sampahnya mendadak kabur terbang! 🕊️", 
-                animasi: () => { tong.style.transform = "translateY(-170px) rotate(-15deg)"; }
-            },
-            { 
-                teks: "Gagal! Gravitasi hilang, apel melayang bebas! 🚀", 
-                animasi: () => { sampah.style.transform = "translate(180px, -260px)"; }
-            },
+            { teks: "Gagal! Tong sampahnya mendadak kabur terbang! 🕊️", animasi: () => { tong.style.transform = "translateY(-170px) rotate(-15deg)"; } },
+            { teks: "Gagal! Gravitasi hilang, apel melayang bebas! 🚀", animasi: () => { sampah.style.transform = "translate(180px, -260px)"; } },
             { 
                 teks: "Gagal! Kucing oren menerkam tong sampah! 🐈", 
                 animasi: () => {
                     efekVisual.innerHTML = "🐈"; efekVisual.style.right = "-40px"; efekVisual.style.bottom = "35px"; efekVisual.style.opacity = "1";
-                    setTimeout(() => { 
-                        efekVisual.style.right = "140px"; tong.style.transform = "translateX(90px)";
-                    }, 50);
+                    setTimeout(() => { efekVisual.style.right = "140px"; tong.style.transform = "translateX(90px)"; }, 50);
                 }
             },
-            { 
-                teks: "Gagal! Lemparan terlalu kuat menembus atap! 🌠", 
-                animasi: () => { sampah.style.transform = "translate(300px, -330px) scale(0.1)"; }
-            },
+            { teks: "Gagal! Lemparan terlalu kuat menembus atap! 🌠", animasi: () => { sampah.style.transform = "translate(300px, -330px) scale(0.1)"; } },
             { 
                 teks: "Gagal! Apel terhisap masuk ke dalam portal gaib! 🌀", 
                 animasi: () => {
@@ -172,31 +226,17 @@
                     setTimeout(() => { tong.innerHTML = "💥"; efekVisual.style.opacity = "0"; }, 250);
                 }
             },
-            { 
-                teks: "Gagal! Tangan mendadak kram, apel jatuh lemas! 🖐️", 
-                animasi: () => { sampah.style.transform = "translate(40px, 15px) rotate(90deg)"; }
-            },
+            { teks: "Gagal! Tangan mendadak kram, apel jatuh lemas! 🖐️", animasi: () => { sampah.style.transform = "translate(40px, 15px) rotate(90deg)"; } },
             { 
                 teks: "Gagal! Apelnya mendadak hidup menjadi burung lalu kabur! 🐦", 
-                animasi: () => { 
-                    setTimeout(() => {
-                        sampah.innerHTML = "🐦"; 
-                        sampah.style.transform = "translate(120px, -250px) scaleX(-1)";
-                    }, 200);
-                }
+                animasi: () => { setTimeout(() => { sampah.innerHTML = "🐦"; sampah.style.transform = "translate(120px, -250px) scaleX(-1)"; }, 200); }
             },
-            { 
-                teks: "Gagal! Guncangan bumi membuat tong bergeser jauh! 🌍", 
-                animasi: () => { tong.style.transform = "translateX(-180px)"; }
-            },
+            { teks: "Gagal! Guncangan bumi membuat tong bergeser jauh! 🌍", animasi: () => { tong.style.transform = "translateX(-180px)"; } },
             { 
                 teks: "Gagal! Tikus kantor melompat dan mencuri apelmu! 🐀", 
                 animasi: () => {
                     efekVisual.innerHTML = "🐀"; efekVisual.style.left = "220px"; efekVisual.style.bottom = "-50px"; efekVisual.style.opacity = "1";
-                    setTimeout(() => { 
-                        efekVisual.style.bottom = "120px";
-                        sampah.style.transform = "translate(180px, -160px) scale(0)";
-                    }, 150);
+                    setTimeout(() => { efekVisual.style.bottom = "120px"; sampah.style.transform = "translate(180px, -160px) scale(0)"; }, 150);
                 }
             }
         ];
@@ -211,10 +251,15 @@
         }
 
         function tembakSampah() {
+            // Aktifkan Audio Context (Wajib untuk browser versi baru/HP agar suara mau keluar)
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+
             sedangBermain = false;
             cancelAnimationFrame(animasiBidikan);
             tombol.disabled = true;
             aimLine.style.opacity = "0";
+            
+            playSound('woosh'); // Bunyi lemparan meluncur
             
             sampah.style.transition = "all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
             sampah.style.transform = "translate(180px, -160px) rotate(180deg)";
@@ -223,6 +268,18 @@
                 const angkaKeberuntungan = Math.floor(Math.random() * 100) + 1;
 
                 if (angkaKeberuntungan <= 7) {
+                    // --- STRATEGI BERHASIL (7%) ---
+                    playSound('win'); // Bunyi menang senandung emas
+                    skor += 1;
+                    uiSkor.innerText = skor;
+
+                    // Update High Score jika memecahkan rekor
+                    if (skor > highScore) {
+                        highScore = skor;
+                        localStorage.setItem('skt_gmn_highscore', highScore);
+                        uiHighScore.innerText = highScore;
+                    }
+
                     sampah.style.transform = "translate(390px, 0px) rotate(360deg)";
                     setTimeout(() => {
                         sampah.style.opacity = "0";
@@ -231,6 +288,11 @@
                         setTimeout(resetGame, 3000);
                     }, 400);
                 } else {
+                    // --- STRATEGI GAGAL (93%) ---
+                    playSound('fail'); // Bunyi zonk
+                    skor = 0; // Reset skor kembali ke nol karena gagal beruntun
+                    uiSkor.innerText = skor;
+
                     const indexGagal = Math.floor(Math.random() * kejadianGagal.length);
                     const kejadian = kejadianGagal[indexGagal];
                     
