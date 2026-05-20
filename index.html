@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test aim - skt X gmn Ultimate</title>
+    <title>Simulasi Kantor - skt X gmn Ultimate Skill Edition</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -40,10 +40,27 @@
 
         /* Detail Background Jendela */
         .game-area::before {
-            content: ""; position: absolute; top: 30px; left: 40px;
-            width: 80px; height: 100px; background: rgba(255, 255, 255, 0.25);
-            border: 3px solid #fff; border-radius: 4px; opacity: 0.4; pointer-events: none;
-        }
+    content: "🌳";
+    font-size: 35px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 5px;
+    position: absolute;
+    top: 30px;
+    left: 40px;
+    width: 80px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.25);
+    border: 3px solid #fff;
+    border-radius: 4px;
+    opacity: 0.6;
+    pointer-events: none;
+}
+            
+            
+            
+        
 
         /* Detail Background Pajangan Dinding */
         .game-area::after {
@@ -90,13 +107,14 @@
         }
         .notifikasi.muncul { transform: translate(-50%, -50%) scale(1); }
         .sukses { color: #2ecc71; border-color: #2ecc71; }
+        .perfect { color: #f1c40f; border-color: #f1c40f; }
         .gagal { color: #e74c3c; border-color: #e74c3c; }
     </style>
 </head>
 <body>
 
     <h1 class="judul-utama">Tes Aim Buang Sampah Lu [ <span>skt X gmn</span> ] 🎯</h1>
-    <p class="instruksi">Paskan bidikan lalu klik tombol di bawah untuk melempar!</p>
+    <p class="instruksi">Incar sudut tengah untuk PERFECT HIT (100% Masuk) !</p>
 
     <div class="papan-skor">
         <div>Skor Saat Ini: <span id="skorSekarang" class="skor-angka">0</span></div>
@@ -128,17 +146,15 @@
         let skor = 0;
         let highScore = localStorage.getItem('skt_gmn_highscore') ? parseInt(localStorage.getItem('skt_gmn_highscore')) : 0;
         
-        // Tampilkan High Score bawaan di awal game jika ada
         uiHighScore.innerText = highScore;
 
-        // --- SISTEM GENERATOR AUDIO SYNTHESIS (Web Audio API) ---
+        // --- SISTEM SUARA (Web Audio API) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playSound(type) {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            osc.connect(gain); gain.connect(audioCtx.destination);
 
             if (type === 'tick') {
                 osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
@@ -152,8 +168,7 @@
                 gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.4);
             } else if (type === 'win') {
-                osc.type = 'sine';
-                const notes = [523.25, 659.25, 783.99, 1046.50]; // Nada selebrasi c-e-g-c
+                const notes = [523.25, 659.25, 783.99, 1046.50];
                 notes.forEach((freq, index) => {
                     const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
                     o.type = 'sine'; o.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.1);
@@ -161,6 +176,17 @@
                     g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.1 + 0.3);
                     o.connect(g); g.connect(audioCtx.destination);
                     o.start(audioCtx.currentTime + index * 0.1); o.stop(audioCtx.currentTime + index * 0.1 + 0.3);
+                });
+            } else if (type === 'perfect') {
+                // Suara melodi spesial super tinggi kalau skill-nya pas
+                const perfectNotes = [587.33, 739.99, 880.00, 1174.66];
+                perfectNotes.forEach((freq, index) => {
+                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                    o.type = 'triangle'; o.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.07);
+                    g.gain.setValueAtTime(0.12, audioCtx.currentTime + index * 0.07);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.07 + 0.4);
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.start(audioCtx.currentTime + index * 0.07); o.stop(audioCtx.currentTime + index * 0.07 + 0.4);
                 });
             } else if (type === 'fail') {
                 osc.type = 'sawtooth'; osc.frequency.setValueAtTime(220, audioCtx.currentTime);
@@ -171,7 +197,6 @@
             }
         }
 
-        // Jalankan Aim Otomatis + Suara Tick Tipis
         let frameCounter = 0;
         function gerakkanAim() {
             if (!sedangBermain) return;
@@ -179,7 +204,6 @@
             if (sudutSekarang <= -80 || sudutSekarang >= -10) { arahGerak = -arahGerak; }
             aimLine.style.transform = `rotate(${sudutSekarang}deg)`;
             
-            // Bunyi tick setiap beberapa frame biar tidak terlalu bising
             frameCounter++;
             if (frameCounter % 15 === 0) { playSound('tick'); }
 
@@ -250,8 +274,34 @@
             gerakkanAim();
         }
 
+        function prosesKemenangan(isPerfect) {
+            if (isPerfect) {
+                playSound('perfect');
+                notif.innerText = "⭐ PERFECT SKILL HIT! 100% SUCCESS! ⭐";
+                notif.className = "notifikasi muncul perfect";
+            } else {
+                playSound('win');
+                notif.innerText = "CONGRATULATIONS! (7% Luck)";
+                notif.className = "notifikasi muncul sukses";
+            }
+
+            skor += 1;
+            uiSkor.innerText = skor;
+
+            if (skor > highScore) {
+                highScore = skor;
+                localStorage.setItem('skt_gmn_highscore', highScore);
+                uiHighScore.innerText = highScore;
+            }
+
+            sampah.style.transform = "translate(390px, 0px) rotate(360deg)";
+            setTimeout(() => {
+                sampah.style.opacity = "0";
+                setTimeout(resetGame, 3000);
+            }, 400);
+        }
+
         function tembakSampah() {
-            // Aktifkan Audio Context (Wajib untuk browser versi baru/HP agar suara mau keluar)
             if (audioCtx.state === 'suspended') { audioCtx.resume(); }
 
             sedangBermain = false;
@@ -259,38 +309,27 @@
             tombol.disabled = true;
             aimLine.style.opacity = "0";
             
-            playSound('woosh'); // Bunyi lemparan meluncur
+            playSound('woosh');
             
             sampah.style.transition = "all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
             sampah.style.transform = "translate(180px, -160px) rotate(180deg)";
 
             setTimeout(() => {
+                // --- KONDISI 1: MEKANIK MURNI SKILL (Hitbox Sangat Kecil: Antara Sudut -35° sampai -37°) ---
+                if (sudutSekarang <= -35 && sudutSekarang >= -37) {
+                    prosesKemenangan(true); // 100% Masuk jalur Skill murni!
+                    return;
+                }
+
+                // --- KONDISI 2: JALUR HOKI ACAK (7%) ---
                 const angkaKeberuntungan = Math.floor(Math.random() * 100) + 1;
 
                 if (angkaKeberuntungan <= 7) {
-                    // --- STRATEGI BERHASIL (7%) ---
-                    playSound('win'); // Bunyi menang senandung emas
-                    skor += 1;
-                    uiSkor.innerText = skor;
-
-                    // Update High Score jika memecahkan rekor
-                    if (skor > highScore) {
-                        highScore = skor;
-                        localStorage.setItem('skt_gmn_highscore', highScore);
-                        uiHighScore.innerText = highScore;
-                    }
-
-                    sampah.style.transform = "translate(390px, 0px) rotate(360deg)";
-                    setTimeout(() => {
-                        sampah.style.opacity = "0";
-                        notif.innerText = "CONGRATULATIONS!";
-                        notif.className = "notifikasi muncul sukses";
-                        setTimeout(resetGame, 3000);
-                    }, 400);
+                    prosesKemenangan(false); // Masuk lewat hoki gacha
                 } else {
-                    // --- STRATEGI GAGAL (93%) ---
-                    playSound('fail'); // Bunyi zonk
-                    skor = 0; // Reset skor kembali ke nol karena gagal beruntun
+                    // JALUR GAGAL
+                    playSound('fail');
+                    skor = 0;
                     uiSkor.innerText = skor;
 
                     const indexGagal = Math.floor(Math.random() * kejadianGagal.length);
