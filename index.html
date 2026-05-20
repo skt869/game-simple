@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>tes aim lo - skt X gmn</title>
+    <title>tes aim lo - skt X gmn Edition</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -14,15 +14,14 @@
             user-select: none;
         }
         
-        /* Judul Kolaborasi Kebanggaan Kita */
-        .credit-title { font-size: 14px; color: #f1c40f; letter-spacing: 2px; font-weight: bold; margin-bottom: 2px; }
-        h1 { font-size: 28px; margin-bottom: 5px; color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        /* Judul Kolaborasi yang Jelas dan Terpampang Nyata */
+        .judul-utama { font-size: 28px; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .judul-utama span { color: #f1c40f; font-weight: 900; letter-spacing: 1px; }
         .instruksi { font-size: 14px; color: #bdc3c7; margin-bottom: 25px; }
         
-        /* Area Game Kantor dengan Detail Background Tipis */
+        /* Area Game Kantor dengan Detail Background */
         .game-area {
             position: relative; width: 100%; max-width: 600px; height: 350px;
-            /* Dinding, skirting kayu, dan lantai karpet kantor */
             background: linear-gradient(to bottom, 
                 #d2b48c 0%, #e6d7c3 70%, 
                 #8b5a2b 70%, #a0522d 72%, 
@@ -32,14 +31,14 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.4); overflow: hidden;
         }
 
-        /* Dekorasi Background Tipis 1: Jendela Kantor */
+        /* Detail Background Jendela */
         .game-area::before {
             content: ""; position: absolute; top: 30px; left: 40px;
-            width: 80px; height: 100px; background: rgba(255, 255, 255, 0.3);
+            width: 80px; height: 100px; background: rgba(255, 255, 255, 0.25);
             border: 3px solid #fff; border-radius: 4px; opacity: 0.4; pointer-events: none;
         }
 
-        /* Dekorasi Background Tipis 2: Bingkai Foto Pajangan */
+        /* Detail Background Pajangan Dinding */
         .game-area::after {
             content: "🖼️"; position: absolute; top: 40px; right: 60px;
             font-size: 30px; opacity: 0.35; pointer-events: none;
@@ -60,13 +59,13 @@
             z-index: 2; pointer-events: none;
         }
 
-        /* Efek Gangguan yang Berinteraksi di Udara */
+        /* Elemen Efek Gangguan */
         .efek-gangguan {
             position: absolute; font-size: 70px; opacity: 0; z-index: 15;
             transition: all 0.4s ease-out; pointer-events: none;
         }
 
-        /* Tombol Lempar */
+        /* Tombol Kontrol */
         .btn-lempar {
             background: #2ecc71; color: white; border: none; padding: 15px 50px;
             font-size: 18px; font-weight: bold; border-radius: 25px; cursor: pointer;
@@ -75,7 +74,7 @@
         .btn-lempar:hover { background: #27ae60; }
         .btn-lempar:active { transform: scale(0.95); }
 
-        /* Pop-up Pengumuman Kata-kata */
+        /* Pop-up Pesan */
         .notifikasi {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
             background: rgba(0, 0, 0, 0.9); padding: 20px 40px; border-radius: 15px;
@@ -89,9 +88,8 @@
 </head>
 <body>
 
-    <div class="credit-title">🚀 SKT X GMN PRESENTS</div>
-    <h1>Simulasi Iseng di Kantor 🎯💼</h1>
-    <p class="instruksi">Tembak tepat waktu! Peluang murni 7% untuk mengalahkan takdir.</p>
+    <h1 class="judul-utama">Tes Aim Buang Sampah Lu   [ <span>skt X gmn</span> ] 🎯</h1>
+    <p class="instruksi">Paskan bidikan lalu klik tombol di bawah untuk melempar!</p>
 
     <div class="game-area">
         <div id="aimLine" class="aim-line"></div>
@@ -122,7 +120,6 @@
         }
         gerakkanAim();
 
-        // 12 Sistem Kegagalan Interaktif: Langsung Memanipulasi / Merubah si Apel!
         const kejadianGagal = [
             { 
                 teks: "Gagal! Tiba-tiba ada badai pasir menyapu apelmu! 🌪️", 
@@ -134,15 +131,15 @@
                 }
             },
             { 
-                teks: "Gagal! Tong sampahnya mendadak kabur ke atas langit! 🕊️", 
+                teks: "Gagal! Tong sampahnya mendadak kabur terbang! 🕊️", 
                 animasi: () => { tong.style.transform = "translateY(-170px) rotate(-15deg)"; }
             },
             { 
-                teks: "Gagal! Gravitasi hilang, apel melayang tanpa arah! 🚀", 
+                teks: "Gagal! Gravitasi hilang, apel melayang bebas! 🚀", 
                 animasi: () => { sampah.style.transform = "translate(180px, -260px)"; }
             },
             { 
-                teks: "Gagal! Kucing oren menerkam dan menggeser tong sampah! 🐈", 
+                teks: "Gagal! Kucing oren menerkam tong sampah! 🐈", 
                 animasi: () => {
                     efekVisual.innerHTML = "🐈"; efekVisual.style.right = "-40px"; efekVisual.style.bottom = "35px"; efekVisual.style.opacity = "1";
                     setTimeout(() => { 
@@ -151,7 +148,7 @@
                 }
             },
             { 
-                teks: "Gagal! Lemparan terlalu kuat hingga menembus atap! 🌠", 
+                teks: "Gagal! Lemparan terlalu kuat menembus atap! 🌠", 
                 animasi: () => { sampah.style.transform = "translate(300px, -330px) scale(0.1)"; }
             },
             { 
@@ -162,7 +159,7 @@
                 }
             },
             { 
-                teks: "Gagal! Hebusan angin kencang meniup balik apelnya! 💨", 
+                teks: "Gagal! Hembusan angin kencang meniup balik apelnya! 💨", 
                 animasi: () => {
                     efekVisual.innerHTML = "💨"; efekVisual.style.left = "260px"; efekVisual.style.top = "100px"; efekVisual.style.opacity = "1";
                     sampah.style.transform = "translate(80px, -100px)";
@@ -182,7 +179,6 @@
             { 
                 teks: "Gagal! Apelnya mendadak hidup menjadi burung lalu kabur! 🐦", 
                 animasi: () => { 
-                    // Apel berinteraksi langsung: BERUBAH wujud di titik koordinat terbangnya!
                     setTimeout(() => {
                         sampah.innerHTML = "🐦"; 
                         sampah.style.transform = "translate(120px, -250px) scaleX(-1)";
